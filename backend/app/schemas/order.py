@@ -27,6 +27,7 @@ class PageCounts(BaseModel):
     total_pages: int
     bw_pages: int
     color_pages: int
+    color_page_numbers: list[int] = []
 
 
 class PricingBreakdown(BaseModel):
