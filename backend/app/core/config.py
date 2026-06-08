@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     telegram_bot_token: str = ""
     telegram_dev_chat_id: str = ""
+    libreoffice_bin: str = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
 
     class Config:
         env_file = ".env"
