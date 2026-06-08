@@ -43,6 +43,20 @@ const schema = z.object({
     "POSTAGE_INTERNATIONAL",
   ]),
   fast_track: z.boolean().default(false),
+  shipping_address: z.string().optional(),
+}).superRefine((val, ctx) => {
+  const needsAddress = val.delivery_option === "UTP_DELIVERY" ||
+    val.delivery_option.startsWith("POSTAGE_");
+  const minLen = val.delivery_option === "UTP_DELIVERY" ? 1 : 5;
+  if (needsAddress && (!val.shipping_address || val.shipping_address.trim().length < minLen)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: val.delivery_option === "UTP_DELIVERY"
+        ? "Delivery location is required"
+        : "Shipping address is required (min 5 characters)",
+      path: ["shipping_address"],
+    });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -157,6 +171,7 @@ export default function OrderPage() {
       fd.append("num_cd", String(data.num_cd));
       fd.append("delivery_option", data.delivery_option);
       fd.append("fast_track", String(data.fast_track));
+      if (data.shipping_address) fd.append("shipping_address", data.shipping_address);
       const result = await analyzeOrder(fd);
       router.push(`/order/verify/${result.analysis_id}`);
     } catch (err) {
@@ -383,6 +398,48 @@ export default function OrderPage() {
                     })}
                   </div>
                 </div>
+
+                {/* Conditional address field */}
+                {deliveryOption === "UTP_DELIVERY" && (
+                  <Field
+                    label="Delivery Location"
+                    error={errors.shipping_address?.message}
+                  >
+                    <input
+                      {...register("shipping_address")}
+                      type="text"
+                      placeholder="UTP Academic Complex / Pigeon Hole / Hostel or Village / etc.,"
+                      className={input(!!errors.shipping_address)}
+                    />
+                  </Field>
+                )}
+                {(deliveryOption === "POSTAGE_SEMENANJUNG" ||
+                  deliveryOption === "POSTAGE_SABAH_SARAWAK") && (
+                  <Field
+                    label="Shipping Address"
+                    error={errors.shipping_address?.message}
+                  >
+                    <textarea
+                      {...register("shipping_address")}
+                      rows={4}
+                      placeholder={"Full mailing address — street, postcode, state"}
+                      className={input(!!errors.shipping_address)}
+                    />
+                  </Field>
+                )}
+                {deliveryOption === "POSTAGE_INTERNATIONAL" && (
+                  <Field
+                    label="Shipping Address"
+                    error={errors.shipping_address?.message}
+                  >
+                    <textarea
+                      {...register("shipping_address")}
+                      rows={4}
+                      placeholder={"Full mailing address — street, postcode, state, country"}
+                      className={input(!!errors.shipping_address)}
+                    />
+                  </Field>
+                )}
 
                 {/* Fast Track */}
                 <label className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-4 cursor-pointer hover:border-amber-300 transition-colors">
