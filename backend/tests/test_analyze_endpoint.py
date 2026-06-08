@@ -105,3 +105,52 @@ def test_analyze_rejects_oversized_pdf():
         files={"thesis_pdf": ("big.pdf", big_content, "application/pdf")},
     )
     assert response.status_code == 422
+
+
+# ─── VAL-003: shipping_address validation ────────────────────────────────────
+
+def test_analyze_rejects_postage_without_address():
+    data = {**_form_data(), "delivery_option": "POSTAGE_SEMENANJUNG"}
+    response = client.post(
+        "/api/v1/orders/analyze",
+        data=data,
+        files={"thesis_pdf": ("stub.pdf", b"%PDF-1.4", "application/pdf")},
+    )
+    assert response.status_code == 400
+    assert "VAL-003" in response.json()["detail"]
+
+
+def test_analyze_rejects_utp_delivery_without_address():
+    data = {**_form_data(), "delivery_option": "UTP_DELIVERY"}
+    response = client.post(
+        "/api/v1/orders/analyze",
+        data=data,
+        files={"thesis_pdf": ("stub.pdf", b"%PDF-1.4", "application/pdf")},
+    )
+    assert response.status_code == 400
+    assert "VAL-003" in response.json()["detail"]
+
+
+def test_analyze_accepts_self_pickup_without_address(pdf_file):
+    response = client.post(
+        "/api/v1/orders/analyze",
+        data=_form_data(),
+        files={"thesis_pdf": ("info-page.pdf", pdf_file, "application/pdf")},
+    )
+    assert response.status_code == 200
+    assert response.json().get("shipping_address") is None
+
+
+def test_analyze_echoes_shipping_address(pdf_file):
+    data = {
+        **_form_data(),
+        "delivery_option": "POSTAGE_SEMENANJUNG",
+        "shipping_address": "123 Jalan Maju, 31750 Bandar Seri Iskandar, Perak",
+    }
+    response = client.post(
+        "/api/v1/orders/analyze",
+        data=data,
+        files={"thesis_pdf": ("info-page.pdf", pdf_file, "application/pdf")},
+    )
+    assert response.status_code == 200
+    assert response.json()["shipping_address"] == "123 Jalan Maju, 31750 Bandar Seri Iskandar, Perak"

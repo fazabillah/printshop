@@ -15,9 +15,26 @@ COURSE_CODE_MAP: dict[str, str] = {
 }
 
 
+_CODE_TO_LABEL: dict[str, str] = {
+    "CV":    "Civil Engineering",
+    "ME":    "Mechanical Engineering",
+    "CE":    "Chemical Engineering",
+    "EE":    "Electrical Engineering",
+    "ComE":  "Computer Engineering",
+    "MAT":   "Materials Engineering",
+    "PE":    "Petroleum Engineering",
+    "AC":    "Applied Chemistry",
+    "OTHER": "Engineering",
+}
+
+
 def map_course_to_code(course_name: str) -> str:
     normalised = course_name.strip().lower()
     return COURSE_CODE_MAP.get(normalised, "OTHER")
+
+
+def course_label(code: str) -> str:
+    return _CODE_TO_LABEL.get(code, "Engineering")
 
 
 def derive_project_type(degree: str) -> str:
